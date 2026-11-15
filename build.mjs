@@ -1,0 +1,12 @@
+import fs from 'node:fs/promises';
+const read=p=>fs.readFile(new URL(p,import.meta.url),'utf8');
+const bindings={HTML:await read('ui/index.html'),APP:await read('ui/app.js'),CSS:await read('ui/style.css'),SEED:JSON.parse(await read('snapshot.json'))};
+const code=Object.entries(bindings).map(([k,v])=>`const ${k}=${JSON.stringify(v)};`).join('\n')+'\n'+await read('worker/handler.mjs');
+await fs.mkdir(new URL('dist/server/',import.meta.url),{recursive:true});await fs.mkdir(new URL('dist/.openai/',import.meta.url),{recursive:true});
+await fs.writeFile(new URL('dist/server/index.js',import.meta.url),code);await fs.copyFile(new URL('.openai/hosting.json',import.meta.url),new URL('dist/.openai/hosting.json',import.meta.url));
+await fs.writeFile(new URL('index.html',import.meta.url),bindings.HTML.replaceAll('%%JOBS%%',String(bindings.SEED.jobs.length)).replaceAll('%%COUNTRIES%%',String(new Set(bindings.SEED.jobs.map(j=>j.country).filter(Boolean)).size)).replace('%%CARDS%%',''));
+await fs.writeFile(new URL('app.js',import.meta.url),bindings.APP);await fs.writeFile(new URL('style.css',import.meta.url),bindings.CSS);
+await fs.writeFile(new URL('.nojekyll',import.meta.url),'');
+await fs.writeFile(new URL('robots.txt',import.meta.url),'User-agent: *\nAllow: /event-job/\nSitemap: https://ksiszz.github.io/event-job/sitemap.xml\n');
+await fs.writeFile(new URL('sitemap.xml',import.meta.url),'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://ksiszz.github.io/event-job/</loc></url></urlset>');
+console.log('Built event job site: '+bindings.SEED.jobs.length+' public vacancies.');

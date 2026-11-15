@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /event-job/
+Sitemap: https://ksiszz.github.io/event-job/sitemap.xml
